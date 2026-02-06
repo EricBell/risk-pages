@@ -143,6 +143,15 @@
             font-size: calc(14px * var(--scale-factor));
             transition: border-color 0.2s ease;
             text-align: center;
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
         }
 
         input[type="number"]:focus {
@@ -320,14 +329,14 @@
                 results.style.display = 'none';
 
                 if (e.target.value === 'shares') {
-                    stopGroup.style.display = 'flex';
+                    stopGroup.style.display = '';
                     sharesGroup.style.display = 'none';
                     stopInput.required = true;
                     sharesInput.required = false;
                     results.classList.remove('single');
                 } else {
                     stopGroup.style.display = 'none';
-                    sharesGroup.style.display = 'flex';
+                    sharesGroup.style.display = '';
                     stopInput.required = false;
                     sharesInput.required = true;
                     results.classList.add('single');
