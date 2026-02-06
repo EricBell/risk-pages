@@ -369,6 +369,84 @@
     </div>
 
     <script>
+        // ========== SECURITY FUNCTIONS ==========
+
+        // Simple encryption/obfuscation for localStorage
+        function encryptData(data) {
+            // Simple XOR cipher with a rotating key
+            const key = 'RiskCalc2026';
+            let result = '';
+            for (let i = 0; i < data.length; i++) {
+                result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return btoa(result); // Base64 encode
+        }
+
+        function decryptData(encrypted) {
+            try {
+                const data = atob(encrypted); // Base64 decode
+                const key = 'RiskCalc2026';
+                let result = '';
+                for (let i = 0; i < data.length; i++) {
+                    result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+                }
+                return result;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Input validation
+        function validateNumericInput(value, fieldName) {
+            // Convert to number
+            const num = parseFloat(value);
+
+            // Check if it's a valid number
+            if (isNaN(num)) {
+                throw new Error(`${fieldName} must be a valid number`);
+            }
+
+            // Check for infinity
+            if (!isFinite(num)) {
+                throw new Error(`${fieldName} cannot be infinite`);
+            }
+
+            // Check for reasonable bounds
+            if (num < 0) {
+                throw new Error(`${fieldName} cannot be negative`);
+            }
+
+            if (num > 1000000000) { // 1 billion max
+                throw new Error(`${fieldName} is too large (max: 1,000,000,000)`);
+            }
+
+            if (num === 0 && (fieldName === 'Entry' || fieldName === 'Shares' || fieldName === 'Contracts')) {
+                throw new Error(`${fieldName} cannot be zero`);
+            }
+
+            return num;
+        }
+
+        // Rate limiting / throttling
+        let lastCalculationTime = 0;
+        const CALCULATION_COOLDOWN = 100; // milliseconds
+
+        function canCalculate() {
+            const now = Date.now();
+            if (now - lastCalculationTime < CALCULATION_COOLDOWN) {
+                return false;
+            }
+            lastCalculationTime = now;
+            return true;
+        }
+
+        // Sanitize display values to prevent any potential XSS
+        function sanitizeDisplay(value) {
+            return String(value).replace(/[<>'"]/g, '');
+        }
+
+        // ========== APPLICATION FUNCTIONS ==========
+
         // Pop out calculator in new window
         function popOutCalculator() {
             const scaleFactor = parseFloat(getComputedStyle(document.documentElement)
@@ -383,7 +461,7 @@
             const top = Math.ceil((window.screen.height - height) / 2);
 
             const features = `width=${width},height=${height},left=${left},top=${top},` +
-                           `resizable=yes,scrollbars=no,status=no,menubar=no,toolbar=no,location=no`;
+                           `resizable=yes,scrollbars=no,status=no,menubar=no,toolbar=no,location=no,noopener=yes,noreferrer=yes`;
 
             window.open(window.location.href, 'RiskCalculator', features);
         }
@@ -431,52 +509,86 @@
             });
         });
 
-        // Load saved risk value from localStorage
+        // Load saved risk value from localStorage (encrypted)
         function loadRiskValue() {
             const savedRisk = localStorage.getItem('riskValue');
             if (savedRisk) {
-                document.getElementById('risk').value = savedRisk;
+                const decrypted = decryptData(savedRisk);
+                if (decrypted) {
+                    document.getElementById('risk').value = decrypted;
+                }
             }
         }
 
-        // Save risk value to localStorage
+        // Save risk value to localStorage (encrypted)
         function saveRiskValue(value) {
-            localStorage.setItem('riskValue', value);
+            const encrypted = encryptData(String(value));
+            localStorage.setItem('riskValue', encrypted);
         }
 
         // Calculate
         document.getElementById('calcForm').addEventListener('submit', (e) => {
             e.preventDefault();
 
-            const risk = parseFloat(document.getElementById('risk').value);
-            const entry = parseFloat(document.getElementById('entry').value);
-            const mode = document.querySelector('input[name="calcMode"]:checked').value;
-
-            saveRiskValue(risk);
-
-            if (mode === 'shares') {
-                const stop = parseFloat(document.getElementById('stop').value);
-                const shares = risk / (entry - stop);
-                const totalPosition = entry * shares;
-
-                document.getElementById('sharesResult').textContent = shares.toFixed(2);
-                document.getElementById('positionResult').textContent = '$' + totalPosition.toFixed(2);
-
-                sharesResultItem.style.display = 'block';
-                positionResultItem.style.display = 'block';
-                stopResultItem.style.display = 'none';
-            } else {
-                const shares = parseFloat(document.getElementById('shares').value);
-                const stop = entry - (risk / shares);
-
-                document.getElementById('stopResult').textContent = '$' + stop.toFixed(2);
-
-                sharesResultItem.style.display = 'none';
-                positionResultItem.style.display = 'none';
-                stopResultItem.style.display = 'block';
+            // Rate limiting check
+            if (!canCalculate()) {
+                return;
             }
 
-            results.style.display = 'grid';
+            try {
+                // Validate inputs
+                const risk = validateNumericInput(document.getElementById('risk').value, 'Risk');
+                const entry = validateNumericInput(document.getElementById('entry').value, 'Entry');
+                const mode = document.querySelector('input[name="calcMode"]:checked').value;
+
+                saveRiskValue(risk);
+
+                if (mode === 'shares') {
+                    const stop = validateNumericInput(document.getElementById('stop').value, 'Stop');
+
+                    // Validate stop is less than entry
+                    if (stop >= entry) {
+                        throw new Error('Stop must be less than Entry for long positions');
+                    }
+
+                    const shares = risk / (entry - stop);
+                    const totalPosition = entry * shares;
+
+                    // Validate calculated values
+                    if (!isFinite(shares) || !isFinite(totalPosition)) {
+                        throw new Error('Calculation resulted in invalid values');
+                    }
+
+                    document.getElementById('sharesResult').textContent = sanitizeDisplay(shares.toFixed(2));
+                    document.getElementById('positionResult').textContent = '$' + sanitizeDisplay(totalPosition.toFixed(2));
+
+                    sharesResultItem.style.display = 'block';
+                    positionResultItem.style.display = 'block';
+                    stopResultItem.style.display = 'none';
+                } else {
+                    const shares = validateNumericInput(document.getElementById('shares').value, 'Shares');
+                    const stop = entry - (risk / shares);
+
+                    // Validate calculated stop
+                    if (!isFinite(stop)) {
+                        throw new Error('Calculation resulted in invalid stop value');
+                    }
+
+                    if (stop < 0) {
+                        throw new Error('Calculated stop cannot be negative');
+                    }
+
+                    document.getElementById('stopResult').textContent = '$' + sanitizeDisplay(stop.toFixed(2));
+
+                    sharesResultItem.style.display = 'none';
+                    positionResultItem.style.display = 'none';
+                    stopResultItem.style.display = 'block';
+                }
+
+                results.style.display = 'grid';
+            } catch (error) {
+                alert('Validation Error: ' + error.message);
+            }
         });
 
         // OPTIONS CALCULATOR
@@ -523,45 +635,78 @@
         document.getElementById('calcFormOptions').addEventListener('submit', (e) => {
             e.preventDefault();
 
-            const risk = parseFloat(document.getElementById('riskOptions').value);
-            const entry = parseFloat(document.getElementById('entryOptions').value);
-            const mode = document.querySelector('input[name="calcModeOptions"]:checked').value;
-
-            saveRiskValue(risk);
-
-            if (mode === 'contracts') {
-                const stop = parseFloat(document.getElementById('stopOptions').value);
-                // Each options contract = 100 shares
-                const contracts = risk / ((entry - stop) * 100);
-                const totalPosition = entry * contracts * 100;
-
-                document.getElementById('contractsResult').textContent = contracts.toFixed(2);
-                document.getElementById('positionResultOptions').textContent = '$' + totalPosition.toFixed(2);
-
-                contractsResultItem.style.display = 'block';
-                positionResultItemOptions.style.display = 'block';
-                stopResultItemOptions.style.display = 'none';
-            } else {
-                const contracts = parseFloat(document.getElementById('contracts').value);
-                const stop = entry - (risk / (contracts * 100));
-
-                document.getElementById('stopResultOptions').textContent = '$' + stop.toFixed(2);
-
-                contractsResultItem.style.display = 'none';
-                positionResultItemOptions.style.display = 'none';
-                stopResultItemOptions.style.display = 'block';
+            // Rate limiting check
+            if (!canCalculate()) {
+                return;
             }
 
-            resultsOptions.style.display = 'grid';
+            try {
+                // Validate inputs
+                const risk = validateNumericInput(document.getElementById('riskOptions').value, 'Risk');
+                const entry = validateNumericInput(document.getElementById('entryOptions').value, 'Entry');
+                const mode = document.querySelector('input[name="calcModeOptions"]:checked').value;
+
+                saveRiskValue(risk);
+
+                if (mode === 'contracts') {
+                    const stop = validateNumericInput(document.getElementById('stopOptions').value, 'Stop');
+
+                    // Validate stop is less than entry
+                    if (stop >= entry) {
+                        throw new Error('Stop must be less than Entry for long positions');
+                    }
+
+                    // Each options contract = 100 shares
+                    const contracts = risk / ((entry - stop) * 100);
+                    const totalPosition = entry * contracts * 100;
+
+                    // Validate calculated values
+                    if (!isFinite(contracts) || !isFinite(totalPosition)) {
+                        throw new Error('Calculation resulted in invalid values');
+                    }
+
+                    document.getElementById('contractsResult').textContent = sanitizeDisplay(contracts.toFixed(2));
+                    document.getElementById('positionResultOptions').textContent = '$' + sanitizeDisplay(totalPosition.toFixed(2));
+
+                    contractsResultItem.style.display = 'block';
+                    positionResultItemOptions.style.display = 'block';
+                    stopResultItemOptions.style.display = 'none';
+                } else {
+                    const contracts = validateNumericInput(document.getElementById('contracts').value, 'Contracts');
+                    const stop = entry - (risk / (contracts * 100));
+
+                    // Validate calculated stop
+                    if (!isFinite(stop)) {
+                        throw new Error('Calculation resulted in invalid stop value');
+                    }
+
+                    if (stop < 0) {
+                        throw new Error('Calculated stop cannot be negative');
+                    }
+
+                    document.getElementById('stopResultOptions').textContent = '$' + sanitizeDisplay(stop.toFixed(2));
+
+                    contractsResultItem.style.display = 'none';
+                    positionResultItemOptions.style.display = 'none';
+                    stopResultItemOptions.style.display = 'block';
+                }
+
+                resultsOptions.style.display = 'grid';
+            } catch (error) {
+                alert('Validation Error: ' + error.message);
+            }
         });
 
         // Load risk value on page load
         loadRiskValue();
 
-        // Also load risk to options form
+        // Also load risk to options form (encrypted)
         const savedRisk = localStorage.getItem('riskValue');
         if (savedRisk) {
-            document.getElementById('riskOptions').value = savedRisk;
+            const decrypted = decryptData(savedRisk);
+            if (decrypted) {
+                document.getElementById('riskOptions').value = decrypted;
+            }
         }
     </script>
 </body>
