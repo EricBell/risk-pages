@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 320px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 8px 5px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            color: #6c757d;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            color: #667eea;
+            background: white;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 15px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .mode-option {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .mode-option input[type="radio"] {
+            margin-right: 4px;
+            cursor: pointer;
+        }
+
+        .mode-option label {
+            cursor: pointer;
+            font-weight: 500;
+            color: #495057;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            color: #495057;
+            font-weight: 500;
+            font-size: 11px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid #f8f9fa;
+        }
+
+        .results.single {
+            grid-template-columns: 1fr;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 10px;
+            color: #6c757d;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .result-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .coming-soon {
+            padding: 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        @media (max-width: 350px) {
+            .container {
+                max-width: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Risk Calculator</h1>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="equity">Equity</div>
+            <div class="tab" data-tab="options">Options</div>
+            <div class="tab" data-tab="futures">Futures</div>
+        </div>
+
+        <div id="equity" class="tab-content active">
+            <div class="mode-selector">
+                <div class="mode-option">
+                    <input type="radio" id="modeShares" name="calcMode" value="shares" checked>
+                    <label for="modeShares">Find Shares</label>
+                </div>
+                <div class="mode-option">
+                    <input type="radio" id="modeStop" name="calcMode" value="stop">
+                    <label for="modeStop">Find Stop</label>
+                </div>
+            </div>
+
+            <form id="calcForm">
+                <div class="form-group">
+                    <label for="risk">Risk ($)</label>
+                    <input type="number" id="risk" step="0.01" required placeholder="50.00">
+                </div>
+                <div class="form-group">
+                    <label for="entry">Entry ($)</label>
+                    <input type="number" id="entry" step="0.01" required placeholder="2.53">
+                </div>
+                <div class="form-group" id="stopGroup">
+                    <label for="stop">Stop ($)</label>
+                    <input type="number" id="stop" step="0.01" required placeholder="2.37">
+                </div>
+                <div class="form-group" id="sharesGroup" style="display: none;">
+                    <label for="shares">Shares</label>
+                    <input type="number" id="shares" step="0.01" placeholder="312.50">
+                </div>
+                <button type="submit" class="btn">Calculate</button>
+            </form>
+
+            <div class="results" id="results" style="display: none;">
+                <div class="result-item" id="sharesResultItem">
+                    <div class="result-label">Shares</div>
+                    <div class="result-value" id="sharesResult">0</div>
+                </div>
+                <div class="result-item" id="positionResultItem">
+                    <div class="result-label">Position</div>
+                    <div class="result-value" id="positionResult">$0</div>
+                </div>
+                <div class="result-item" id="stopResultItem" style="display: none;">
+                    <div class="result-label">Stop</div>
+                    <div class="result-value" id="stopResult">$0</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="options" class="tab-content">
+            <div class="coming-soon">
+                <strong>Options Calculator</strong><br>Coming Soon
+            </div>
+        </div>
+
+        <div id="futures" class="tab-content">
+            <div class="coming-soon">
+                <strong>Futures Calculator</strong><br>Coming Soon
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+
+        // Mode switching
+        const stopGroup = document.getElementById('stopGroup');
+        const sharesGroup = document.getElementById('sharesGroup');
+        const stopInput = document.getElementById('stop');
+        const sharesInput = document.getElementById('shares');
+        const results = document.getElementById('results');
+        const sharesResultItem = document.getElementById('sharesResultItem');
+        const positionResultItem = document.getElementById('positionResultItem');
+        const stopResultItem = document.getElementById('stopResultItem');
+
+        document.querySelectorAll('input[name="calcMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                results.style.display = 'none';
+
+                if (e.target.value === 'shares') {
+                    stopGroup.style.display = 'block';
+                    sharesGroup.style.display = 'none';
+                    stopInput.required = true;
+                    sharesInput.required = false;
+                    results.classList.remove('single');
+                } else {
+                    stopGroup.style.display = 'none';
+                    sharesGroup.style.display = 'block';
+                    stopInput.required = false;
+                    sharesInput.required = true;
+                    results.classList.add('single');
+                }
+            });
+        });
+
+        // Load saved risk value from localStorage
+        function loadRiskValue() {
+            const savedRisk = localStorage.getItem('riskValue');
+            if (savedRisk) {
+                document.getElementById('risk').value = savedRisk;
+            }
+        }
+
+        // Save risk value to localStorage
+        function saveRiskValue(value) {
+            localStorage.setItem('riskValue', value);
+        }
+
+        // Calculate
+        document.getElementById('calcForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const risk = parseFloat(document.getElementById('risk').value);
+            const entry = parseFloat(document.getElementById('entry').value);
+            const mode = document.querySelector('input[name="calcMode"]:checked').value;
+
+            saveRiskValue(risk);
+
+            if (mode === 'shares') {
+                const stop = parseFloat(document.getElementById('stop').value);
+                const shares = risk / (entry - stop);
+                const totalPosition = entry * shares;
+
+                document.getElementById('sharesResult').textContent = shares.toFixed(2);
+                document.getElementById('positionResult').textContent = '$' + totalPosition.toFixed(2);
+
+                sharesResultItem.style.display = 'block';
+                positionResultItem.style.display = 'block';
+                stopResultItem.style.display = 'none';
+            } else {
+                const shares = parseFloat(document.getElementById('shares').value);
+                const stop = entry - (risk / shares);
+
+                document.getElementById('stopResult').textContent = '$' + stop.toFixed(2);
+
+                sharesResultItem.style.display = 'none';
+                positionResultItem.style.display = 'none';
+                stopResultItem.style.display = 'block';
+            }
+
+            results.style.display = 'grid';
+        });
+
+        // Load risk value on page load
+        loadRiskValue();
+    </script>
+</body>
+</html>
