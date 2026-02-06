@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Risk Calculator</title>
     <style>
+        :root {
+            /* ADJUST THIS VALUE TO CHANGE OVERALL SIZE (default: 1.1 = 10% larger) */
+            --scale-factor: 1.1;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -23,22 +28,22 @@
 
         .container {
             background: white;
-            border-radius: 8px;
+            border-radius: calc(8px * var(--scale-factor));
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 320px;
+            max-width: calc(320px * var(--scale-factor));
             overflow: hidden;
         }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 15px;
+            padding: calc(12px * var(--scale-factor)) calc(15px * var(--scale-factor));
             text-align: center;
         }
 
         .header h1 {
-            font-size: 16px;
+            font-size: calc(16px * var(--scale-factor));
             font-weight: 600;
         }
 
@@ -50,11 +55,11 @@
 
         .tab {
             flex: 1;
-            padding: 8px 5px;
+            padding: calc(8px * var(--scale-factor)) calc(5px * var(--scale-factor));
             text-align: center;
             cursor: pointer;
             font-weight: 500;
-            font-size: 12px;
+            font-size: calc(12px * var(--scale-factor));
             color: #6c757d;
             transition: all 0.2s ease;
             border-bottom: 2px solid transparent;
@@ -72,32 +77,35 @@
 
         .tab-content {
             display: none;
-            padding: 15px;
+            padding: calc(15px * var(--scale-factor));
         }
 
         .tab-content.active {
             display: block;
         }
 
+        .form-layout {
+            display: flex;
+            gap: calc(12px * var(--scale-factor));
+            align-items: flex-end;
+        }
+
         .mode-selector {
             display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 6px;
+            flex-direction: column;
+            gap: calc(8px * var(--scale-factor));
         }
 
         .mode-option {
-            flex: 1;
             display: flex;
             align-items: center;
-            font-size: 11px;
+            font-size: calc(11px * var(--scale-factor));
             cursor: pointer;
+            white-space: nowrap;
         }
 
         .mode-option input[type="radio"] {
-            margin-right: 4px;
+            margin-right: calc(4px * var(--scale-factor));
             cursor: pointer;
         }
 
@@ -108,25 +116,33 @@
             margin: 0;
         }
 
+        .fields-row {
+            display: flex;
+            gap: calc(8px * var(--scale-factor));
+            flex: 1;
+        }
+
         .form-group {
-            margin-bottom: 10px;
+            flex: 1;
         }
 
         label {
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: calc(4px * var(--scale-factor));
             color: #495057;
             font-weight: 500;
-            font-size: 11px;
+            font-size: calc(11px * var(--scale-factor));
+            text-align: center;
         }
 
         input[type="number"] {
             width: 100%;
-            padding: 8px 10px;
+            padding: calc(8px * var(--scale-factor)) calc(6px * var(--scale-factor));
             border: 1px solid #e9ecef;
-            border-radius: 4px;
-            font-size: 14px;
+            border-radius: calc(4px * var(--scale-factor));
+            font-size: calc(14px * var(--scale-factor));
             transition: border-color 0.2s ease;
+            text-align: center;
         }
 
         input[type="number"]:focus {
@@ -136,16 +152,16 @@
 
         .btn {
             width: 100%;
-            padding: 10px;
+            padding: calc(10px * var(--scale-factor));
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 4px;
-            font-size: 13px;
+            border-radius: calc(4px * var(--scale-factor));
+            font-size: calc(13px * var(--scale-factor));
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s ease;
-            margin-top: 8px;
+            margin-top: calc(12px * var(--scale-factor));
         }
 
         .btn:hover {
@@ -159,9 +175,9 @@
         .results {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
+            gap: calc(8px * var(--scale-factor));
+            margin-top: calc(12px * var(--scale-factor));
+            padding-top: calc(12px * var(--scale-factor));
             border-top: 2px solid #f8f9fa;
         }
 
@@ -171,36 +187,30 @@
 
         .result-item {
             background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
+            padding: calc(10px * var(--scale-factor));
+            border-radius: calc(4px * var(--scale-factor));
             text-align: center;
         }
 
         .result-label {
-            font-size: 10px;
+            font-size: calc(10px * var(--scale-factor));
             color: #6c757d;
-            margin-bottom: 4px;
+            margin-bottom: calc(4px * var(--scale-factor));
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
 
         .result-value {
-            font-size: 16px;
+            font-size: calc(16px * var(--scale-factor));
             font-weight: 700;
             color: #667eea;
         }
 
         .coming-soon {
-            padding: 30px;
+            padding: calc(30px * var(--scale-factor));
             text-align: center;
             color: #6c757d;
-            font-size: 12px;
-        }
-
-        @media (max-width: 350px) {
-            .container {
-                max-width: 280px;
-            }
+            font-size: calc(12px * var(--scale-factor));
         }
     </style>
 </head>
@@ -217,33 +227,37 @@
         </div>
 
         <div id="equity" class="tab-content active">
-            <div class="mode-selector">
-                <div class="mode-option">
-                    <input type="radio" id="modeShares" name="calcMode" value="shares" checked>
-                    <label for="modeShares">Find Shares</label>
-                </div>
-                <div class="mode-option">
-                    <input type="radio" id="modeStop" name="calcMode" value="stop">
-                    <label for="modeStop">Find Stop</label>
-                </div>
-            </div>
-
             <form id="calcForm">
-                <div class="form-group">
-                    <label for="risk">Risk ($)</label>
-                    <input type="number" id="risk" step="0.01" required placeholder="50.00">
-                </div>
-                <div class="form-group">
-                    <label for="entry">Entry ($)</label>
-                    <input type="number" id="entry" step="0.01" required placeholder="2.53">
-                </div>
-                <div class="form-group" id="stopGroup">
-                    <label for="stop">Stop ($)</label>
-                    <input type="number" id="stop" step="0.01" required placeholder="2.37">
-                </div>
-                <div class="form-group" id="sharesGroup" style="display: none;">
-                    <label for="shares">Shares</label>
-                    <input type="number" id="shares" step="0.01" placeholder="312.50">
+                <div class="form-layout">
+                    <div class="mode-selector">
+                        <div class="mode-option">
+                            <input type="radio" id="modeShares" name="calcMode" value="shares" checked>
+                            <label for="modeShares">Find Shares</label>
+                        </div>
+                        <div class="mode-option">
+                            <input type="radio" id="modeStop" name="calcMode" value="stop">
+                            <label for="modeStop">Find Stop</label>
+                        </div>
+                    </div>
+
+                    <div class="fields-row">
+                        <div class="form-group">
+                            <label for="risk">Risk ($)</label>
+                            <input type="number" id="risk" step="0.01" required placeholder="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="entry">Entry ($)</label>
+                            <input type="number" id="entry" step="0.01" required placeholder="2.53">
+                        </div>
+                        <div class="form-group" id="stopGroup">
+                            <label for="stop">Stop ($)</label>
+                            <input type="number" id="stop" step="0.01" required placeholder="2.37">
+                        </div>
+                        <div class="form-group" id="sharesGroup" style="display: none;">
+                            <label for="shares">Shares</label>
+                            <input type="number" id="shares" step="0.01" placeholder="312.50">
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="btn">Calculate</button>
             </form>
@@ -306,14 +320,14 @@
                 results.style.display = 'none';
 
                 if (e.target.value === 'shares') {
-                    stopGroup.style.display = 'block';
+                    stopGroup.style.display = 'flex';
                     sharesGroup.style.display = 'none';
                     stopInput.required = true;
                     sharesInput.required = false;
                     results.classList.remove('single');
                 } else {
                     stopGroup.style.display = 'none';
-                    sharesGroup.style.display = 'block';
+                    sharesGroup.style.display = 'flex';
                     stopInput.required = false;
                     sharesInput.required = true;
                     results.classList.add('single');
