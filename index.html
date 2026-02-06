@@ -40,11 +40,32 @@
             color: white;
             padding: calc(12px * var(--scale-factor)) calc(15px * var(--scale-factor));
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
             font-size: calc(16px * var(--scale-factor));
             font-weight: 600;
+        }
+
+        .popout-btn {
+            position: absolute;
+            right: calc(10px * var(--scale-factor));
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: calc(4px * var(--scale-factor)) calc(8px * var(--scale-factor));
+            border-radius: calc(4px * var(--scale-factor));
+            font-size: calc(11px * var(--scale-factor));
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .popout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(1.05);
         }
 
         .tabs {
@@ -227,6 +248,7 @@
     <div class="container">
         <div class="header">
             <h1>Risk Calculator</h1>
+            <button class="popout-btn" onclick="popOutCalculator()">⧉ Pop Out</button>
         </div>
 
         <div class="tabs">
@@ -301,6 +323,25 @@
     </div>
 
     <script>
+        // Pop out calculator in new window
+        function popOutCalculator() {
+            const scaleFactor = parseFloat(getComputedStyle(document.documentElement)
+                .getPropertyValue('--scale-factor')) || 1.1;
+
+            // Calculate window size based on scale factor
+            const width = Math.ceil(380 * scaleFactor);
+            const height = Math.ceil(500 * scaleFactor);
+
+            // Center the window on screen
+            const left = Math.ceil((window.screen.width - width) / 2);
+            const top = Math.ceil((window.screen.height - height) / 2);
+
+            const features = `width=${width},height=${height},left=${left},top=${top},` +
+                           `resizable=yes,scrollbars=no,status=no,menubar=no,toolbar=no,location=no`;
+
+            window.open(window.location.href, 'RiskCalculator', features);
+        }
+
         // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
