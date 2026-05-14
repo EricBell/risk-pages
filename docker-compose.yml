@@ -8,8 +8,8 @@ services:
       - "8080:80"
     restart: unless-stopped
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.risk.rule=Host(`risk.fastrax.com`)"
-      - "traefik.http.routers.risk.entrypoints=websecure"
-      - "traefik.http.routers.risk.tls.certresolver=letsencrypt"
-      - "traefik.http.services.risk.loadbalancer.server.port=80"
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.risk.rule=Host(`risk.fastrax.com`)"
+#      - "traefik.http.routers.risk.entrypoints=websecure"
+#      - "traefik.http.routers.risk.tls.certresolver=letsencrypt"
+#      - "traefik.http.services.risk.loadbalancer.server.port=80"
